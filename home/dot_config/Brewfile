@@ -24,5 +24,10 @@ brew "eza"
 brew "zoxide"
 brew "jq"
 
-# Phase 2 will add neovim + LSP servers
+# Editor + LSP toolchain
+brew "neovim"
+brew "node"
+brew "fd"
+brew "tree-sitter"
+
 # Phase 3 will add casks
