@@ -162,11 +162,9 @@ require('lazy').setup({
   },
 
   -- ----- Rainbow brackets — color brackets/parens by nesting depth -----
-  -- Big readability win for nested calls and JSX.
-  {
-    'HiPhish/rainbow-delimiters.nvim',
-    event = { 'BufReadPre', 'BufNewFile' },
-  },
+  -- Big readability win for nested calls and JSX. Loads via treesitter,
+  -- needs to be live before any buffer is rendered.
+  { 'HiPhish/rainbow-delimiters.nvim', lazy = false },
 
   -- ----- Statusline -----------------------------------------------------
   {
