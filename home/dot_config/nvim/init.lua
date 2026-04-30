@@ -139,27 +139,25 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme: catppuccin (mocha), matches Ghostty's palette -----
+  -- ----- Colorscheme: One Dark, matches Ghostty's default palette ------
   {
-    'catppuccin/nvim',
-    name = 'catppuccin',
+    'navarasu/onedark.nvim',
     priority = 1000,
     opts = {
-      flavour = 'mocha',
-      transparent_background = false,
-      integrations = {
-        blink_cmp = true,
-        fidget = true,
-        gitsigns = true,
-        mason = true,
-        native_lsp = { enabled = true },
-        telescope = { enabled = true },
-        treesitter = true,
+      style = 'dark',          -- 'dark' | 'darker' (more contrast) | 'cool' | 'deep'
+      transparent = true,      -- inherit Ghostty's exact #282c34 bg
+      term_colors = false,     -- don't override terminal palette
+      code_style = {
+        comments = 'italic',
+        keywords = 'none',
+        functions = 'none',
+        strings = 'none',
+        variables = 'none',
       },
     },
     config = function(_, opts)
-      require('catppuccin').setup(opts)
-      vim.cmd.colorscheme('catppuccin')
+      require('onedark').setup(opts)
+      require('onedark').load()
     end,
   },
 

@@ -1,7 +1,7 @@
 # Ghostty config — owns the color palette for the whole stack.
-# tmux + fzf inherit ANSI 0-15 from here; nvim's catppuccin.nvim matches.
+# tmux + fzf inherit ANSI 0-15 from here; nvim's onedark.nvim matches.
 
-theme = Catppuccin Mocha
+theme = Ghostty Default Style Dark
 
 # Subtle defaults — feel free to tweak.
 font-size = 14
