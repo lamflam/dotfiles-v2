@@ -46,7 +46,7 @@ opt.softtabstop = 4
 opt.splitbelow = true
 opt.splitright = true
 opt.tabstop = 4
-opt.termguicolors = true
+opt.termguicolors = false         -- inherit terminal palette (matches tmux + fzf)
 opt.textwidth = 120
 opt.timeoutlen = 500
 opt.ttimeoutlen = 50
@@ -117,7 +117,10 @@ map('n', '<leader>-',  function()
 end, 'Shrink split')
 map('n', '<leader>|',  '<C-w>=', 'Equalize splits')
 map('n', '<C-\\>',     ':vsp<cr>', 'Vertical split')
+-- Horizontal split: bind both forms — legacy terminals send Ctrl-/ as 0x1F
+-- (which vim sees as <C-_>); modern terminals (Ghostty / kitty / CSI-u) send <C-/>.
 map('n', '<C-_>',      ':sp<cr>',  'Horizontal split')
+map('n', '<C-/>',      ':sp<cr>',  'Horizontal split')
 
 -- Diagnostics — match existing <leader>e / <leader>E convention.
 map('n', '<leader>e', function() vim.diagnostic.jump({ count = 1 })  end, 'Next diagnostic')
@@ -136,26 +139,15 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme ----------------------------------------------------
-  {
-    'ellisonleao/gruvbox.nvim',
-    priority = 1000,
-    config = function()
-      require('gruvbox').setup({
-        terminal_colors = true,
-        italic = { strings = false, comments = true, operators = false },
-      })
-      vim.cmd.colorscheme('gruvbox')
-    end,
-  },
-
   -- ----- Statusline -----------------------------------------------------
+  -- No colorscheme plugin — termguicolors=false makes nvim use the terminal's
+  -- ANSI palette directly, matching tmux + fzf.
   {
     'nvim-lualine/lualine.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     opts = {
       options = {
-        theme = 'gruvbox',
+        theme = 'auto',
         component_separators = '|',
         section_separators = '',
         globalstatus = true,
@@ -201,10 +193,28 @@ require('lazy').setup({
     },
     config = function()
       local t = require('telescope')
+      local actions = require('telescope.actions')
       t.setup({
         defaults = {
           path_display = { 'truncate' },
           layout_config = { horizontal = { preview_width = 0.55 } },
+          mappings = {
+            i = {
+              -- Single-press <Esc> closes (skip telescope's normal-mode layer).
+              ['<esc>'] = actions.close,
+              -- Preview scroll — same chord style as the fzf opts.
+              ['<C-A-k>'] = actions.preview_scrolling_up,
+              ['<C-A-j>'] = actions.preview_scrolling_down,
+              ['<A-Up>']   = actions.preview_scrolling_up,
+              ['<A-Down>'] = actions.preview_scrolling_down,
+            },
+            n = {
+              ['<C-A-k>'] = actions.preview_scrolling_up,
+              ['<C-A-j>'] = actions.preview_scrolling_down,
+              ['<A-Up>']   = actions.preview_scrolling_up,
+              ['<A-Down>'] = actions.preview_scrolling_down,
+            },
+          },
         },
       })
       pcall(t.load_extension, 'fzf')
@@ -297,10 +307,17 @@ require('lazy').setup({
           vim.keymap.set('n', '<leader>gi', b.lsp_implementations,  opts('Implementations (picker)'))
           vim.keymap.set('n', '<leader>gr', b.lsp_references,       opts('References (picker)'))
 
-          vim.keymap.set('n', 'K',          vim.lsp.buf.hover,       opts('Hover docs'))
-          vim.keymap.set('n', '<leader>a',  vim.lsp.buf.code_action, opts('Code action'))
-          vim.keymap.set('x', '<leader>a',  vim.lsp.buf.code_action, opts('Code action'))
-          vim.keymap.set('n', '<leader>n',  vim.lsp.buf.rename,      opts('Rename'))
+          vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts('Hover docs'))
+          vim.keymap.set('n', '<leader>n', vim.lsp.buf.rename, opts('Rename'))
+
+          -- Filter out disabled actions (some servers — ts_ls especially —
+          -- return them and they clutter the picker).
+          local code_action = function()
+            vim.lsp.buf.code_action({
+              filter = function(a) return a.disabled == nil end,
+            })
+          end
+          vim.keymap.set({ 'n', 'x' }, '<leader>a', code_action, opts('Code action'))
         end,
       })
     end,
@@ -370,13 +387,13 @@ require('lazy').setup({
         local function gmap(mode, lhs, rhs, desc)
           vim.keymap.set(mode, lhs, rhs, { buffer = buf, silent = true, desc = desc })
         end
-        gmap('n', '<leader>b',  gs.blame_line,         'Git blame line')
-        gmap('n', ']c',         gs.next_hunk,          'Next hunk')
-        gmap('n', '[c',         gs.prev_hunk,          'Prev hunk')
-        gmap('n', '<leader>hp', gs.preview_hunk,       'Preview hunk')
-        gmap('n', '<leader>hs', gs.stage_hunk,         'Stage hunk')
-        gmap('n', '<leader>hu', gs.undo_stage_hunk or gs.stage_hunk, 'Undo stage')
-        gmap('n', '<leader>hr', gs.reset_hunk,         'Reset hunk')
+        gmap('n', '<leader>b',  gs.blame_line,   'Git blame line')
+        gmap('n', ']c',         gs.next_hunk,    'Next hunk')
+        gmap('n', '[c',         gs.prev_hunk,    'Prev hunk')
+        gmap('n', '<leader>hp', gs.preview_hunk, 'Preview hunk')
+        -- gitsigns 1.0+: stage_hunk toggles staged/unstaged on the current hunk.
+        gmap('n', '<leader>hs', gs.stage_hunk,   'Stage / unstage hunk')
+        gmap('n', '<leader>hr', gs.reset_hunk,   'Reset hunk (discard changes)')
       end,
     },
   },
