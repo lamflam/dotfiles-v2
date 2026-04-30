@@ -139,25 +139,17 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme: One Dark, matches Ghostty's default palette ------
+  -- ----- Colorscheme: VS Code Dark+, high-contrast syntax over Ghostty bg
   {
-    'navarasu/onedark.nvim',
+    'Mofiqul/vscode.nvim',
     priority = 1000,
-    opts = {
-      style = 'darker',        -- 'dark' | 'darker' (more contrast) | 'cool' | 'deep'
-      transparent = true,      -- inherit Ghostty's exact #282c34 bg
-      term_colors = false,     -- don't override terminal palette
-      code_style = {
-        comments = 'italic',
-        keywords = 'none',
-        functions = 'none',
-        strings = 'none',
-        variables = 'none',
-      },
-    },
-    config = function(_, opts)
-      require('onedark').setup(opts)
-      require('onedark').load()
+    config = function()
+      require('vscode').setup({
+        style = 'dark',
+        transparent = true,           -- use Ghostty's bg
+        italic_comments = true,
+      })
+      require('vscode').load()
     end,
   },
 
