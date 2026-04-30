@@ -46,7 +46,7 @@ opt.softtabstop = 4
 opt.splitbelow = true
 opt.splitright = true
 opt.tabstop = 4
-opt.termguicolors = false         -- inherit terminal palette (matches tmux + fzf)
+opt.termguicolors = true          -- 24-bit colors; gruvbox.nvim values match Ghostty's palette
 opt.textwidth = 120
 opt.timeoutlen = 500
 opt.ttimeoutlen = 50
@@ -139,15 +139,26 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
+  -- ----- Colorscheme: gruvbox-material, tuned to Ghostty's palette -----
+  {
+    'sainnhe/gruvbox-material',
+    priority = 1000,
+    config = function()
+      vim.g.gruvbox_material_background = 'medium'
+      vim.g.gruvbox_material_foreground = 'material'
+      vim.g.gruvbox_material_better_performance = 1
+      vim.g.gruvbox_material_enable_italic = 1
+      vim.cmd.colorscheme('gruvbox-material')
+    end,
+  },
+
   -- ----- Statusline -----------------------------------------------------
-  -- No colorscheme plugin — termguicolors=false makes nvim use the terminal's
-  -- ANSI palette directly, matching tmux + fzf.
   {
     'nvim-lualine/lualine.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     opts = {
       options = {
-        theme = 'auto',
+        theme = 'gruvbox-material',
         component_separators = '|',
         section_separators = '',
         globalstatus = true,

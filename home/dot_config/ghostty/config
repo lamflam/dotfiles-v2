@@ -1,0 +1,22 @@
+# Ghostty config — owns the color palette for the whole stack.
+# tmux + fzf inherit ANSI 0-15 from here; nvim's gruvbox.nvim is tuned to match.
+
+theme = Gruvbox Material Dark
+
+# Subtle defaults — feel free to tweak.
+font-size = 14
+window-padding-x = 8
+window-padding-y = 4
+window-padding-balance = true
+
+# Match shell behavior on first launch.
+shell-integration = zsh
+shell-integration-features = cursor,sudo,title
+
+# Don't bell on every error.
+audible-bell = false
+visual-bell = false
+
+# macOS specifics
+macos-option-as-alt = true
+macos-titlebar-style = tabs
