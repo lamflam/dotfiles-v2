@@ -60,3 +60,14 @@
 
 [include]
     path = ~/.config/git/config.local
+
+{{- if lookPath "gh" }}
+
+# gh CLI credential helper — keeps HTTPS pushes working without storing tokens.
+[credential "https://github.com"]
+    helper =
+    helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+    helper =
+    helper = !gh auth git-credential
+{{- end }}
