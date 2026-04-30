@@ -1,0 +1,28 @@
+# Brewfile — declarative package list for macOS.
+# Applied automatically by chezmoi via run_onchange_install-packages.sh.
+# Run by hand: brew bundle --file ~/.config/Brewfile
+
+# Core
+brew "chezmoi"
+brew "git"
+brew "git-delta"
+brew "gh"
+
+# Shell
+brew "starship"
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+
+# Multiplexer
+brew "tmux"
+
+# CLI tools
+brew "fzf"
+brew "ripgrep"
+brew "bat"
+brew "eza"
+brew "zoxide"
+brew "jq"
+
+# Phase 2 will add neovim + LSP servers
+# Phase 3 will add casks

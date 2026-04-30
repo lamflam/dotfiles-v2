@@ -1,0 +1,136 @@
+# tmux config — single template covering laptop + nested-remote machines.
+# Toggles via the `nested` chezmoi var:
+#   - laptop:  prefix C-a, pane-nav C-h/j/k/l (vim-aware)
+#   - nested:  prefix C-z, pane-nav M-h/j/k/l (so it doesn't fight outer tmux)
+
+# ---------- Prefix ----------
+{{- if .nested }}
+set -g prefix C-z
+unbind C-b
+bind C-z send-prefix
+{{- else }}
+set -g prefix C-a
+unbind C-b
+bind C-a send-prefix
+{{- end }}
+
+# ---------- Sensible defaults ----------
+set-option -g mouse on
+set -g base-index 1
+setw -g pane-base-index 1
+set -sg escape-time 0
+set -g history-limit 50000
+set -g focus-events on
+set -g renumber-windows on
+
+# Truecolor
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",*256col*:Tc"
+set -ga terminal-overrides ",xterm-256color:Tc"
+
+# Clipboard / OSC52
+set -g set-clipboard on
+{{- if eq .chezmoi.os "darwin" }}
+set -g allow-passthrough on
+{{- end }}
+
+# Reload config
+bind s source-file "$HOME/.config/tmux/tmux.conf" \; display "Reloaded!"
+
+# ---------- Splits — keep your |/- bindings ----------
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Pane nav with prefix (still works alongside vim-aware bindings below)
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# vi mode for copy
+setw -g mode-keys vi
+bind-key Escape copy-mode
+bind-key p paste-buffer
+bind \; command-prompt
+bind : command-prompt
+
+# ---------- Vim-aware pane nav ----------
+# Detects vim/nvim/fzf in the active pane; sends the key through if so.
+is_vim_or_fzf="ps -o state= -o comm= -t '#{pane_tty}' \
+    | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(ssh|fzf|((view|n?vim?x?)(diff)?))$'"
+{{- if .nested }}
+bind-key -n M-h if-shell "$is_vim_or_fzf" "send-keys M-h" "if-shell -F '#{pane_at_left}'   '' 'select-pane -L'"
+bind-key -n M-j if-shell "$is_vim_or_fzf" "send-keys M-j" "if-shell -F '#{pane_at_bottom}' '' 'select-pane -D'"
+bind-key -n M-k if-shell "$is_vim_or_fzf" "send-keys M-k" "if-shell -F '#{pane_at_top}'    '' 'select-pane -U'"
+bind-key -n M-l if-shell "$is_vim_or_fzf" "send-keys M-l" "if-shell -F '#{pane_at_right}'  '' 'select-pane -R'"
+{{- else }}
+bind-key -n C-h if-shell "$is_vim_or_fzf" "send-keys C-h" "select-pane -L"
+bind-key -n C-j if-shell "$is_vim_or_fzf" "send-keys C-j" "select-pane -D"
+bind-key -n C-k if-shell "$is_vim_or_fzf" "send-keys C-k" "select-pane -U"
+bind-key -n C-l if-shell "$is_vim_or_fzf" "send-keys C-l" "select-pane -R"
+{{- end }}
+
+# ---------- Copy-mode keys ----------
+unbind -T copy-mode-vi Enter
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+{{- if and (eq .chezmoi.os "darwin") (not .nested) }}
+bind-key -T copy-mode-vi y send-keys -X copy-pipe "pbcopy"
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe "pbcopy"
+{{- else }}
+bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+bind-key -T copy-mode-vi Enter send-keys -X copy-selection-and-cancel
+bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-selection
+{{- end }}
+
+# ---------- Theme: gruvbox-material dark ----------
+set-option -g status "on"
+set-option -g status-bg colour237
+set-option -g status-fg colour223
+set-window-option -g window-status-activity-style bg=colour237,fg=colour248
+set-window-option -g window-status-current-style bg=default,fg=colour237
+set -g window-style 'fg=colour247,bg=colour236'
+set -g window-active-style 'fg=colour250,bg=colour236'
+set-option -g pane-active-border-style fg=colour250
+set-option -g pane-border-style fg=colour250
+setw -g pane-border-status bottom
+setw -g pane-border-format '─'
+set-option -g message-style bg=colour239,fg=colour223
+set-option -g message-command-style bg=colour239,fg=colour223
+set-option -g display-panes-active-colour colour250
+set-option -g display-panes-colour colour237
+set-window-option -g clock-mode-colour colour109
+set-window-option -g window-status-bell-style fg=colour235,bg=colour167
+
+# Layout
+set-option -g status-justify "left"
+set-option -g status-left-length "80"
+set-option -g status-right-length "120"
+set-window-option -g window-status-separator ""
+set-option -g status-left "#[fg=colour248, bg=colour241] #S #[fg=colour241, bg=colour237, nobold, noitalics, nounderscore]"
+set-window-option -g window-status-format "#[fg=colour237,bg=colour239,noitalics]#[fg=colour223,bg=colour239] #I #[fg=colour223, bg=colour239] #W #[fg=colour239, bg=colour237, noitalics]"
+
+# Accent + status-right depend on machine kind
+{{- if .nested }}
+set-window-option -g window-status-style bg=colour109,fg=colour237
+set-window-option -g window-status-current-format "#[fg=colour239, bg=colour248, :nobold, noitalics, nounderscore]#[fg=colour239, bg=colour109] #I #[fg=colour239, bg=colour109, bold] #W #[fg=colour109, bg=colour237, nobold, noitalics, nounderscore]"
+set-option -g status-right "#[fg=colour239, bg=colour237, nobold, nounderscore, noitalics]#[fg=colour246,bg=colour239] %Y-%m-%d  %H:%M #[fg=colour109, bg=colour239, nobold, noitalics, nounderscore]#[fg=colour237, bg=colour109] #(echo $REMOTE_NAME) "
+{{- else }}
+set-window-option -g window-status-style bg=colour214,fg=colour237
+set-window-option -g window-status-current-format "#[fg=colour239, bg=colour248, :nobold, noitalics, nounderscore]#[fg=colour239, bg=colour214] #I #[fg=colour239, bg=colour214, bold] #W #[fg=colour214, bg=colour237, nobold, noitalics, nounderscore]"
+set-option -g status-right "#[fg=colour239, bg=colour237, nobold, nounderscore, noitalics]#[fg=colour246,bg=colour239] %Y-%m-%d  %H:%M #[fg=colour248, bg=colour239, nobold, noitalics, nounderscore]#[fg=colour237, bg=colour248] #h "
+{{- end }}
+
+# ---------- Plugins (TPM) ----------
+# Bootstrap TPM if missing, then load plugins.
+if "test ! -d ~/.config/tmux/plugins/tpm" \
+  "run 'git clone --depth=1 https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm && ~/.config/tmux/plugins/tpm/bin/install_plugins'"
+
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
+
+set -g @resurrect-capture-pane-contents 'on'
+set -g @continuum-restore 'on'
+
+run '~/.config/tmux/plugins/tpm/tpm'

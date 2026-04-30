@@ -1,0 +1,56 @@
+#
+# zsh entrypoint — sources modular config under ~/.config/zsh
+#
+
+export DOTFILES_OS={{ .chezmoi.os | quote }}
+{{- if .nested }}
+export DOTFILES_NESTED=1
+{{- end }}
+
+# vi mode in shell
+set -o vi
+bindkey -v
+export EDITOR=nvim
+export VISUAL=nvim
+export PAGER=less
+
+# History
+HISTFILE=$HOME/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS
+
+# Completion
+autoload -Uz compinit && compinit -d "$HOME/.cache/zcompdump"
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+# Modular config
+ZSH_CONFIG="$HOME/.config/zsh"
+for f in path exports aliases functions fzf; do
+  [ -r "$ZSH_CONFIG/$f.zsh" ] && source "$ZSH_CONFIG/$f.zsh"
+done
+
+# Plugins — only load in real interactive terminals (skips `zsh -ic` and scripts).
+if [[ -t 0 && $- == *i* ]]; then
+{{- if eq .chezmoi.os "darwin" }}
+  [ -r /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
+    source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  [ -r /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+    source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+{{- else }}
+  [ -r /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
+    source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  [ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+    source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+{{- end }}
+fi
+
+# zoxide (smarter cd)
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+
+# starship prompt (last, so it sees plugin state)
+command -v starship >/dev/null && eval "$(starship init zsh)"
+
+# Machine-local overrides (gitignored)
+[ -r "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

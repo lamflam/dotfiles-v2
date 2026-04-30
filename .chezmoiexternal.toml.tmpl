@@ -1,0 +1,15 @@
+{{- /*
+   Work overlay: when `work=true`, pull a private dotfiles repo into the source
+   state. Files there layer on top of this repo (work file wins on conflict).
+   Configure the URL on the work machine when ready.
+*/ -}}
+{{- if .work }}
+[".chezmoiexternal/work"]
+    type = "git-repo"
+    url = "git@github.com:lamflam/dotfiles-work.git"
+    refreshPeriod = "168h"
+    [".chezmoiexternal/work".clone]
+        args = ["--depth", "1"]
+    [".chezmoiexternal/work".pull]
+        args = ["--ff-only"]
+{{- end }}

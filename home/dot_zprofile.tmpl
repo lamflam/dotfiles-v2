@@ -1,0 +1,8 @@
+#
+# zsh login shells: load brew shellenv before .zshrc on macOS.
+#
+{{- if eq .chezmoi.os "darwin" }}
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{{- end }}

@@ -1,0 +1,65 @@
+# starship — cross-shell prompt
+# Color palette: gruvbox-material dark
+# https://starship.rs/config/
+
+format = """
+{{ if .nested -}}
+[\\[$env_var(REMOTE_NAME)\\] ](bold green)\
+{{ end -}}
+$directory\
+$git_branch\
+$git_state\
+$git_status\
+$python\
+$nodejs\
+$character"""
+
+add_newline = false
+command_timeout = 1000
+
+[character]
+success_symbol = "[»](bold yellow)"
+error_symbol = "[»](bold red)"
+vimcmd_symbol = "[«](bold green)"
+
+[directory]
+style = "bold blue"
+truncation_length = 4
+truncation_symbol = "…/"
+truncate_to_repo = false
+
+[git_branch]
+symbol = ""
+format = "[($symbol$branch)]($style) "
+style = "bold yellow"
+
+[git_state]
+format = '\([$state( $progress_current/$progress_total)]($style)\) '
+style = "bold red"
+
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+style = "bold yellow"
+ahead = "↑${count}"
+behind = "↓${count}"
+diverged = "↑${ahead_count}↓${behind_count}"
+modified = "*"
+staged = "+"
+deleted = "✗"
+untracked = "?"
+conflicted = "!"
+
+[python]
+symbol = "py "
+format = '[(\($virtualenv\) )]($style)'
+style = "cyan"
+
+[nodejs]
+disabled = true
+
+{{- /* On nested machines, surface the REMOTE_NAME env var as a prefix. */}}
+[env_var.REMOTE_NAME]
+variable = "REMOTE_NAME"
+default = ""
+format = "[$env_value]($style)"
+style = "bold green"

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Installs declared packages.
+# chezmoi re-runs this script automatically whenever its rendered content
+# changes, so the embedded Brewfile/apt-list hashes below act as triggers.
+
+set -euo pipefail
+
+{{ if eq .chezmoi.os "darwin" -}}
+# ---- macOS: Homebrew ----
+# Brewfile snapshot (drives re-run when contents change):
+{{ include "dot_config/Brewfile" | comment "# " }}
+
+if ! command -v brew >/dev/null 2>&1; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
+
+echo "Running brew bundle..."
+brew bundle install --file="$HOME/.config/Brewfile"
+
+{{ else if eq .chezmoi.os "linux" -}}
+# ---- Linux: apt (Debian/Ubuntu) ----
+# Package list snapshot:
+# - git, curl, build-essential, zsh, tmux, fzf, ripgrep, bat, eza, zoxide,
+#   git-delta, jq, zsh-autosuggestions, zsh-syntax-highlighting
+
+if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -qq
+    sudo apt-get install -yq --no-install-recommends \
+        git curl build-essential ca-certificates \
+        zsh tmux fzf ripgrep bat jq \
+        zsh-autosuggestions zsh-syntax-highlighting
+
+    # eza, zoxide, delta, starship — install from upstream when not in apt
+    if ! command -v eza >/dev/null 2>&1; then
+        sudo mkdir -p /etc/apt/keyrings
+        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+        sudo apt-get update -qq && sudo apt-get install -yq eza
+    fi
+
+    if ! command -v zoxide >/dev/null 2>&1; then
+        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+    fi
+
+    if ! command -v starship >/dev/null 2>&1; then
+        curl -sS https://starship.rs/install.sh | sh -s -- -y
+    fi
+
+    if ! command -v delta >/dev/null 2>&1; then
+        DELTA_VER=$(curl -sSfL https://api.github.com/repos/dandavison/delta/releases/latest | jq -r .tag_name)
+        ARCH=$(dpkg --print-architecture)
+        curl -sSfL "https://github.com/dandavison/delta/releases/download/${DELTA_VER}/git-delta_${DELTA_VER}_${ARCH}.deb" -o /tmp/delta.deb
+        sudo dpkg -i /tmp/delta.deb && rm /tmp/delta.deb
+    fi
+fi
+{{ end -}}
