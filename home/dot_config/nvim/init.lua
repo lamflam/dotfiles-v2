@@ -139,21 +139,27 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme: tokyonight (storm), matches Ghostty's palette -----
+  -- ----- Colorscheme: catppuccin (mocha), matches Ghostty's palette -----
   {
-    'folke/tokyonight.nvim',
+    'catppuccin/nvim',
+    name = 'catppuccin',
     priority = 1000,
     opts = {
-      style = 'storm',
-      transparent = false,
-      styles = {
-        comments = { italic = true },
-        keywords = { italic = false },
+      flavour = 'mocha',
+      transparent_background = false,
+      integrations = {
+        blink_cmp = true,
+        fidget = true,
+        gitsigns = true,
+        mason = true,
+        native_lsp = { enabled = true },
+        telescope = { enabled = true },
+        treesitter = true,
       },
     },
     config = function(_, opts)
-      require('tokyonight').setup(opts)
-      vim.cmd.colorscheme('tokyonight-storm')
+      require('catppuccin').setup(opts)
+      vim.cmd.colorscheme('catppuccin')
     end,
   },
 
@@ -163,7 +169,8 @@ require('lazy').setup({
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     opts = {
       options = {
-        theme = 'tokyonight',
+        theme = 'auto',          -- catppuccin doesn't ship a lualine theme module;
+                                 -- 'auto' derives it from the active colorscheme.
         component_separators = '|',
         section_separators = '',
         globalstatus = true,
