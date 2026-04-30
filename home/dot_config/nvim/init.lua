@@ -139,16 +139,21 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme: gruvbox-material, tuned to Ghostty's palette -----
+  -- ----- Colorscheme: tokyonight (storm), matches Ghostty's palette -----
   {
-    'sainnhe/gruvbox-material',
+    'folke/tokyonight.nvim',
     priority = 1000,
-    config = function()
-      vim.g.gruvbox_material_background = 'medium'
-      vim.g.gruvbox_material_foreground = 'material'
-      vim.g.gruvbox_material_better_performance = 1
-      vim.g.gruvbox_material_enable_italic = 1
-      vim.cmd.colorscheme('gruvbox-material')
+    opts = {
+      style = 'storm',
+      transparent = false,
+      styles = {
+        comments = { italic = true },
+        keywords = { italic = false },
+      },
+    },
+    config = function(_, opts)
+      require('tokyonight').setup(opts)
+      vim.cmd.colorscheme('tokyonight-storm')
     end,
   },
 
@@ -158,7 +163,7 @@ require('lazy').setup({
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     opts = {
       options = {
-        theme = 'gruvbox-material',
+        theme = 'tokyonight',
         component_separators = '|',
         section_separators = '',
         globalstatus = true,

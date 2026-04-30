@@ -1,7 +1,7 @@
 # Ghostty config — owns the color palette for the whole stack.
-# tmux + fzf inherit ANSI 0-15 from here; nvim's gruvbox.nvim is tuned to match.
+# tmux + fzf inherit ANSI 0-15 from here; nvim's tokyonight.nvim matches.
 
-theme = Gruvbox Material Dark
+theme = tokyonight_storm
 
 # Subtle defaults — feel free to tweak.
 font-size = 14
@@ -12,10 +12,6 @@ window-padding-balance = true
 # Match shell behavior on first launch.
 shell-integration = zsh
 shell-integration-features = cursor,sudo,title
-
-# Don't bell on every error.
-audible-bell = false
-visual-bell = false
 
 # macOS specifics
 macos-option-as-alt = true
