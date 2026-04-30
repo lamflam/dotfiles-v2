@@ -139,32 +139,23 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme: Tokyo Night (Night flavor) ------------------------
-  --   * 'night'  — deepest bg, highest contrast in the family
-  --   * 'storm'  — slightly lighter bg, softer accents
-  --   * 'moon'   — between night and storm, cooler hue
+  -- ----- Colorscheme: Nord (nordic.nvim — polished treesitter coverage)
   {
-    'folke/tokyonight.nvim',
+    'AlexvZyl/nordic.nvim',
     priority = 1000,
-    opts = {
-      style = 'night',
-      transparent = true,         -- inherit Ghostty's bg
-      styles = {
-        comments = { italic = true },
-        keywords = { italic = false },
-        functions = { bold = true },
-      },
-    },
-    config = function(_, opts)
-      require('tokyonight').setup(opts)
-      vim.cmd.colorscheme('tokyonight-night')
+    config = function()
+      require('nordic').setup({
+        transparent = { bg = true },     -- inherit Ghostty's bg
+        bold_keywords = false,
+        italic_comments = true,
+        bright_border = false,
+        reduced_blue = true,             -- slightly warmer Nord (improves contrast vs vanilla Nord)
+        swap_backgrounds = false,
+        telescope = { style = 'classic' },
+      })
+      require('nordic').load()
     end,
   },
-
-  -- ----- Rainbow brackets — color brackets/parens by nesting depth -----
-  -- Big readability win for nested calls and JSX. Loads via treesitter,
-  -- needs to be live before any buffer is rendered.
-  { 'HiPhish/rainbow-delimiters.nvim', lazy = false },
 
   -- ----- Statusline -----------------------------------------------------
   {
