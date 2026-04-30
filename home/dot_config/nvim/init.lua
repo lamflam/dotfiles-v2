@@ -144,7 +144,7 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     opts = {
-      style = 'dark',          -- 'dark' | 'darker' (more contrast) | 'cool' | 'deep'
+      style = 'darker',        -- 'dark' | 'darker' (more contrast) | 'cool' | 'deep'
       transparent = true,      -- inherit Ghostty's exact #282c34 bg
       term_colors = false,     -- don't override terminal palette
       code_style = {
