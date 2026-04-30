@@ -1,7 +1,7 @@
 # Ghostty config — owns the color palette for the whole stack.
 # tmux + fzf inherit ANSI 0-15 from here; nvim's tokyonight.nvim matches.
 
-theme = tokyonight_storm
+theme = TokyoNight Storm
 
 # Subtle defaults — feel free to tweak.
 font-size = 14
