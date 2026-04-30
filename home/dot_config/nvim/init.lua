@@ -139,18 +139,33 @@ vim.opt.rtp:prepend(lazypath)
 -- ---------- 5. Plugins ------------------------------------------------------
 require('lazy').setup({
 
-  -- ----- Colorscheme: VS Code Dark+, high-contrast syntax over Ghostty bg
+  -- ----- Colorscheme: Tokyo Night (Night flavor) ------------------------
+  --   * 'night'  — deepest bg, highest contrast in the family
+  --   * 'storm'  — slightly lighter bg, softer accents
+  --   * 'moon'   — between night and storm, cooler hue
   {
-    'Mofiqul/vscode.nvim',
+    'folke/tokyonight.nvim',
     priority = 1000,
-    config = function()
-      require('vscode').setup({
-        style = 'dark',
-        transparent = true,           -- use Ghostty's bg
-        italic_comments = true,
-      })
-      require('vscode').load()
+    opts = {
+      style = 'night',
+      transparent = true,         -- inherit Ghostty's bg
+      styles = {
+        comments = { italic = true },
+        keywords = { italic = false },
+        functions = { bold = true },
+      },
+    },
+    config = function(_, opts)
+      require('tokyonight').setup(opts)
+      vim.cmd.colorscheme('tokyonight-night')
     end,
+  },
+
+  -- ----- Rainbow brackets — color brackets/parens by nesting depth -----
+  -- Big readability win for nested calls and JSX.
+  {
+    'HiPhish/rainbow-delimiters.nvim',
+    event = { 'BufReadPre', 'BufNewFile' },
   },
 
   -- ----- Statusline -----------------------------------------------------
