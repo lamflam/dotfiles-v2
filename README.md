@@ -6,7 +6,22 @@ Targets macOS laptops and Linux servers (Hetzner / Digital Ocean).
 ## Bootstrap a new machine
 
 ```sh
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply lamflam/dotfiles-v2
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/lamflam/dotfiles-v2/main/scripts/bootstrap.sh)"
+```
+
+The script:
+
+1. Installs minimal prereqs (`git`, `curl`) via apt/dnf/pacman on Linux,
+   triggers Xcode CLT install on macOS.
+2. Drops `chezmoi` into `~/.local/bin` (no sudo).
+3. Runs `chezmoi init --apply lamflam/dotfiles-v2` — prompts you, writes
+   files, and the post-apply script installs everything else (Brewfile on
+   macOS / apt + upstream tarballs on Linux).
+
+If you already have `chezmoi` and prefer to skip the bootstrap script:
+
+```sh
+chezmoi init --apply lamflam/dotfiles-v2
 ```
 
 On first run chezmoi prompts for:

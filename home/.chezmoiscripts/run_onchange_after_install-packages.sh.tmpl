@@ -22,38 +22,81 @@ brew bundle install --file="$HOME/.config/Brewfile"
 
 {{ else if eq .chezmoi.os "linux" -}}
 # ---- Linux: apt (Debian/Ubuntu) ----
-# Package list snapshot:
-# - git, curl, build-essential, zsh, tmux, fzf, ripgrep, bat, eza, zoxide,
-#   git-delta, jq, zsh-autosuggestions, zsh-syntax-highlighting
+# Package list (mirrors the macOS Brewfile above):
+#   apt-supplied : git curl build-essential ca-certificates zsh tmux fzf
+#                  ripgrep bat jq fd-find nodejs npm
+#                  zsh-autosuggestions zsh-syntax-highlighting
+#   upstream     : eza, zoxide, starship, git-delta, neovim
+#
+# nvim 0.11+ is required by our init.lua but Ubuntu/Debian apt is well behind,
+# so we always pull the latest stable release tarball.
 
 if command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update -qq
     sudo apt-get install -yq --no-install-recommends \
-        git curl build-essential ca-certificates \
-        zsh tmux fzf ripgrep bat jq \
+        git curl wget build-essential ca-certificates gpg \
+        zsh tmux fzf ripgrep bat jq fd-find nodejs npm \
         zsh-autosuggestions zsh-syntax-highlighting
 
-    # eza, zoxide, delta, starship — install from upstream when not in apt
+    # Debian/Ubuntu ship `fd` as `fdfind`; symlink for parity with macOS.
+    if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+        mkdir -p "$HOME/.local/bin"
+        ln -sfn "$(command -v fdfind)" "$HOME/.local/bin/fd"
+    fi
+    # Same for batcat -> bat.
+    if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
+        mkdir -p "$HOME/.local/bin"
+        ln -sfn "$(command -v batcat)" "$HOME/.local/bin/bat"
+    fi
+
+    # eza — third-party apt repo
     if ! command -v eza >/dev/null 2>&1; then
         sudo mkdir -p /etc/apt/keyrings
-        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
+            sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
+            sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
         sudo apt-get update -qq && sudo apt-get install -yq eza
     fi
 
+    # zoxide — upstream installer
     if ! command -v zoxide >/dev/null 2>&1; then
         curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
     fi
 
+    # starship — upstream installer
     if ! command -v starship >/dev/null 2>&1; then
         curl -sS https://starship.rs/install.sh | sh -s -- -y
     fi
 
+    # git-delta — github release .deb
     if ! command -v delta >/dev/null 2>&1; then
         DELTA_VER=$(curl -sSfL https://api.github.com/repos/dandavison/delta/releases/latest | jq -r .tag_name)
         ARCH=$(dpkg --print-architecture)
         curl -sSfL "https://github.com/dandavison/delta/releases/download/${DELTA_VER}/git-delta_${DELTA_VER}_${ARCH}.deb" -o /tmp/delta.deb
         sudo dpkg -i /tmp/delta.deb && rm /tmp/delta.deb
+    fi
+
+    # neovim — github release tarball (apt version too old for our init.lua)
+    needs_nvim=1
+    if command -v nvim >/dev/null 2>&1; then
+        if nvim --version | head -1 | awk '{print $2}' | grep -qE 'v0\.(1[1-9]|[2-9][0-9])'; then
+            needs_nvim=0
+        fi
+    fi
+    if [ "$needs_nvim" = "1" ]; then
+        ARCH_TAR="$(uname -m)"
+        case "$ARCH_TAR" in
+            x86_64)  NVIM_ASSET=nvim-linux-x86_64.tar.gz ;;
+            aarch64) NVIM_ASSET=nvim-linux-arm64.tar.gz ;;
+            *) echo "neovim: unsupported arch $ARCH_TAR — skipping"; NVIM_ASSET= ;;
+        esac
+        if [ -n "$NVIM_ASSET" ]; then
+            curl -sSfL "https://github.com/neovim/neovim/releases/latest/download/$NVIM_ASSET" -o /tmp/nvim.tar.gz
+            sudo tar -xzf /tmp/nvim.tar.gz -C /opt/
+            sudo ln -sfn "/opt/${NVIM_ASSET%.tar.gz}/bin/nvim" /usr/local/bin/nvim
+            rm /tmp/nvim.tar.gz
+        fi
     fi
 fi
 {{ end -}}
