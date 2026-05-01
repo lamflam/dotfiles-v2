@@ -2,6 +2,30 @@
 # Shell functions.
 #
 
+# ssh — wraps the binary to install ghostty terminfo on remote on first
+# connect. Defined here (not via Ghostty's parent-shell integration) so the
+# behavior is the same in tmux subshells, screen, scripts, etc.
+ssh() {
+  if [[ "$TERM" == "xterm-ghostty" ]] && command -v infocmp >/dev/null 2>&1; then
+    local host
+    host=$(command ssh -G "$@" 2>/dev/null | awk '/^hostname / {print $2; exit}')
+    if [[ -n "$host" ]]; then
+      local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ghostty-terminfo"
+      local marker="$cache_dir/$host"
+      if [[ ! -f "$marker" ]]; then
+        if infocmp -x xterm-ghostty 2>/dev/null \
+            | command ssh -T -o LogLevel=ERROR "$host" \
+                'mkdir -p ~/.terminfo && tic -x -o ~/.terminfo - >/dev/null 2>&1'
+        then
+          mkdir -p "$cache_dir"
+          touch "$marker"
+        fi
+      fi
+    fi
+  fi
+  command ssh "$@"
+}
+
 # Search-and-replace across files matched by ripgrep.
 #   rgr 'oldText' 'newText'
 rgr() {

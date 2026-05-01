@@ -9,9 +9,16 @@ window-padding-x = 8
 window-padding-y = 4
 window-padding-balance = true
 
+# Cursor — blinking block, consistent across parent shell and tmux subshells.
+cursor-style = block
+cursor-style-blink = true
+
 # Match shell behavior on first launch.
+# Note: shell-integration's `cursor` feature lets zsh/bash override cursor-style
+# per mode (e.g. vi insert vs normal). Disabling it locks the cursor to the
+# value above so the bar/block doesn't change between parent and tmux.
 shell-integration = zsh
-shell-integration-features = cursor,sudo,title,ssh-terminfo,ssh-env
+shell-integration-features = no-cursor,sudo,title,ssh-terminfo,ssh-env
 
 # macOS specifics
 macos-option-as-alt = true
