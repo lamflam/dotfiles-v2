@@ -24,19 +24,27 @@ brew bundle install --file="$HOME/.config/Brewfile"
 # ---- Linux: apt (Debian/Ubuntu) ----
 # Package list (mirrors the macOS Brewfile above):
 #   apt-supplied : git curl build-essential ca-certificates zsh tmux fzf
-#                  ripgrep bat jq fd-find nodejs npm
+#                  ripgrep bat jq fd-find nodejs
 #                  zsh-autosuggestions zsh-syntax-highlighting
 #   upstream     : eza, zoxide, starship, git-delta, neovim
 #
 # nvim 0.11+ is required by our init.lua but Ubuntu/Debian apt is well behind,
 # so we always pull the latest stable release tarball.
+#
+# npm: most nodejs distributions (NodeSource, official) bundle it. Only
+# install separately if missing — apt's `npm` package conflicts with
+# NodeSource's bundled npm.
 
 if command -v apt-get >/dev/null 2>&1; then
     sudo apt-get update -qq
     sudo apt-get install -yq --no-install-recommends \
         git curl wget build-essential ca-certificates gpg \
-        zsh tmux fzf ripgrep bat jq fd-find nodejs npm \
+        zsh tmux fzf ripgrep bat jq fd-find nodejs \
         zsh-autosuggestions zsh-syntax-highlighting
+
+    if ! command -v npm >/dev/null 2>&1; then
+        sudo apt-get install -yq --no-install-recommends npm
+    fi
 
     # Debian/Ubuntu ship `fd` as `fdfind`; symlink for parity with macOS.
     if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
