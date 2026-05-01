@@ -51,8 +51,16 @@ fi
 export PATH="$BIN_DIR:$PATH"
 
 # ------------------------------------------------------------ Apply
+# When this script is curl-piped, our stdin is the curl pipe (not a TTY),
+# so chezmoi's promptStringOnce / promptBoolOnce in .chezmoi.toml.tmpl
+# would silently read EOF and templates referencing .name etc would fail.
+# Redirect from /dev/tty so chezmoi can prompt the actual user.
 echo "▶ Running chezmoi init --apply $REPO"
-chezmoi init --apply "$REPO"
+if [ -e /dev/tty ]; then
+  chezmoi init --apply "$REPO" </dev/tty
+else
+  chezmoi init --apply "$REPO"
+fi
 
 echo
 echo "✔ Bootstrap complete."
