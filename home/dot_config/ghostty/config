@@ -11,7 +11,7 @@ window-padding-balance = true
 
 # Match shell behavior on first launch.
 shell-integration = zsh
-shell-integration-features = cursor,sudo,title
+shell-integration-features = cursor,sudo,title,ssh-terminfo,ssh-env
 
 # macOS specifics
 macos-option-as-alt = true
