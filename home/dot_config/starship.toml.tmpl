@@ -3,9 +3,7 @@
 # https://starship.rs/config/
 
 format = """
-{{ if .nested -}}
-[\\[$env_var(REMOTE_NAME)\\] ](bold green)\
-{{ end -}}
+$hostname\
 $directory\
 $git_branch\
 $git_state\
@@ -57,9 +55,10 @@ style = "cyan"
 [nodejs]
 disabled = true
 
-{{- /* On nested machines, surface the REMOTE_NAME env var as a prefix. */}}
-[env_var.REMOTE_NAME]
-variable = "REMOTE_NAME"
-default = ""
-format = "[$env_value]($style)"
+# Hostname — only shown when SSHed into a remote machine (default behavior).
+[hostname]
+ssh_only = true
+format = "[$ssh_symbol$hostname]($style) "
+ssh_symbol = ""
 style = "bold green"
+trim_at = "."
