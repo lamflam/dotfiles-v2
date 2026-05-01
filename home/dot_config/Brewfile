@@ -30,4 +30,5 @@ brew "node"
 brew "fd"
 brew "tree-sitter"
 
-# Phase 3 will add casks
+# Fonts (Nerd Font variant ships glyphs for lualine / devicons)
+cask "font-fira-code-nerd-font"
