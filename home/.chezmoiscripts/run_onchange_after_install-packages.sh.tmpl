@@ -26,7 +26,13 @@ brew bundle install --file="$HOME/.config/Brewfile"
 #   apt-supplied : git curl build-essential ca-certificates zsh tmux fzf
 #                  ripgrep bat jq fd-find nodejs python3 python3-pip python3-venv
 #                  zsh-autosuggestions zsh-syntax-highlighting
-#   upstream     : eza, zoxide, starship, git-delta, neovim
+#   third-party  : gh (GitHub apt repo), eza (gierens apt repo)
+#   upstream     : zoxide, starship, git-delta, neovim
+#
+# IMPORTANT: this list is the Linux mirror of dot_config/Brewfile. When you
+# add a package to the Brewfile, also add it here (and vice versa). Drift
+# between the two is the most common reason "X isn't installed on the
+# remote even though chezmoi update ran".
 #
 # python3-pip / python3-venv are needed by Mason to install basedpyright
 # (it creates a venv and pip-installs the language server inside it).
@@ -59,6 +65,17 @@ if command -v apt-get >/dev/null 2>&1; then
     if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
         mkdir -p "$HOME/.local/bin"
         ln -sfn "$(command -v batcat)" "$HOME/.local/bin/bat"
+    fi
+
+    # gh — GitHub's apt repo (not in Ubuntu default)
+    if ! command -v gh >/dev/null 2>&1; then
+        sudo mkdir -p -m 755 /etc/apt/keyrings
+        wget -nv -O- https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+            sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+        sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+            sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+        sudo apt-get update -qq && sudo apt-get install -yq gh
     fi
 
     # eza — third-party apt repo
