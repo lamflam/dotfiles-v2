@@ -1,0 +1,50 @@
+# packages.toml — single source of truth for installed packages.
+#
+# Renders both:
+#   - home/dot_config/Brewfile.tmpl  (macOS)
+#   - home/.chezmoiscripts/run_onchange_after_install-packages.sh.tmpl (Linux)
+#
+# Schema (under [packages]):
+#   common   — installed on both OSes; brew formula on macOS, apt on Linux.
+#              Use `apt = "different-name"` if names diverge (e.g. fd / fd-find).
+#              Use `symlink_from`/`symlink_to` to add ~/.local/bin/<to> ->
+#              <from> on Linux (Ubuntu names some binaries differently).
+#   apt_only — Linux toolchain bits with no brew counterpart on macOS.
+#   casks    — macOS-only casks (GUI apps, fonts).
+#   upstream — brew formula on macOS, custom installer on Linux. linux_kind
+#              names a shell function defined in the install script.
+#              "skip" means don't install on Linux at all.
+
+[packages]
+common = [
+    { brew = "git",                      apt = "git" },
+    { brew = "tmux",                     apt = "tmux" },
+    { brew = "fzf",                      apt = "fzf" },
+    { brew = "ripgrep",                  apt = "ripgrep" },
+    { brew = "jq",                       apt = "jq" },
+    { brew = "bat",                      apt = "bat",     symlink_from = "batcat", symlink_to = "bat" },
+    { brew = "fd",                       apt = "fd-find", symlink_from = "fdfind", symlink_to = "fd" },
+    { brew = "node",                     apt = "nodejs" },
+    { brew = "zsh-autosuggestions",      apt = "zsh-autosuggestions" },
+    { brew = "zsh-syntax-highlighting",  apt = "zsh-syntax-highlighting" },
+]
+
+apt_only = [
+    "curl", "wget", "build-essential", "ca-certificates", "gpg",
+    "zsh", "python3", "python3-pip", "python3-venv",
+]
+
+casks = [
+    "font-fira-code-nerd-font",
+]
+
+upstream = [
+    { brew = "chezmoi",     linux_kind = "skip" },        # bootstrap.sh handles Linux
+    { brew = "gh",          linux_kind = "gh" },
+    { brew = "eza",         linux_kind = "eza" },
+    { brew = "zoxide",      linux_kind = "zoxide" },
+    { brew = "starship",    linux_kind = "starship" },
+    { brew = "git-delta",   linux_kind = "git_delta" },
+    { brew = "neovim",      linux_kind = "neovim" },
+    { brew = "tree-sitter", linux_kind = "skip" },        # not needed for our nvim setup
+]

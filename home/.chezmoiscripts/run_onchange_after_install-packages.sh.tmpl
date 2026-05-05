@@ -1,131 +1,128 @@
 #!/usr/bin/env bash
 # Installs declared packages.
-# chezmoi re-runs this script automatically whenever its rendered content
-# changes, so the embedded Brewfile/apt-list hashes below act as triggers.
+# Single source of truth: ~/.local/share/chezmoi/home/.chezmoidata/packages.toml
+# This script re-runs whenever its rendered content changes — the embedded
+# packages.toml fingerprint below makes that trigger on data changes too.
 
 set -euo pipefail
 
+# ---- Fingerprint (drives re-run when packages.toml changes) ----
+{{ include ".chezmoidata/packages.toml" | comment "# " }}
+
 {{ if eq .chezmoi.os "darwin" -}}
-# ---- macOS: Homebrew ----
-# Brewfile snapshot (drives re-run when contents change):
-{{ include "dot_config/Brewfile" | comment "# " }}
+# ============================================================== macOS (Homebrew)
 
 if ! command -v brew >/dev/null 2>&1; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
-
 eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
 
 echo "Running brew bundle..."
 brew bundle install --file="$HOME/.config/Brewfile"
 
 {{ else if eq .chezmoi.os "linux" -}}
-# ---- Linux: apt (Debian/Ubuntu) ----
-# Package list (mirrors the macOS Brewfile above):
-#   apt-supplied : git curl build-essential ca-certificates zsh tmux fzf
-#                  ripgrep bat jq fd-find nodejs python3 python3-pip python3-venv
-#                  zsh-autosuggestions zsh-syntax-highlighting
-#   third-party  : gh (GitHub apt repo), eza (gierens apt repo)
-#   upstream     : zoxide, starship, git-delta, neovim
-#
-# IMPORTANT: this list is the Linux mirror of dot_config/Brewfile. When you
-# add a package to the Brewfile, also add it here (and vice versa). Drift
-# between the two is the most common reason "X isn't installed on the
-# remote even though chezmoi update ran".
-#
-# python3-pip / python3-venv are needed by Mason to install basedpyright
-# (it creates a venv and pip-installs the language server inside it).
-#
-# nvim 0.11+ is required by our init.lua but Ubuntu/Debian apt is well behind,
-# so we always pull the latest stable release tarball.
-#
-# npm: most nodejs distributions (NodeSource, official) bundle it. Only
-# install separately if missing — apt's `npm` package conflicts with
-# NodeSource's bundled npm.
+# ============================================================== Linux (apt + upstream)
 
-if command -v apt-get >/dev/null 2>&1; then
-    sudo apt-get update -qq
-    sudo apt-get install -yq --no-install-recommends \
-        git curl wget build-essential ca-certificates gpg \
-        zsh tmux fzf ripgrep bat jq fd-find nodejs \
-        python3 python3-pip python3-venv \
-        zsh-autosuggestions zsh-syntax-highlighting
-
-    if ! command -v npm >/dev/null 2>&1; then
-        sudo apt-get install -yq --no-install-recommends npm
-    fi
-
-    # Debian/Ubuntu ship `fd` as `fdfind`; symlink for parity with macOS.
-    if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
-        mkdir -p "$HOME/.local/bin"
-        ln -sfn "$(command -v fdfind)" "$HOME/.local/bin/fd"
-    fi
-    # Same for batcat -> bat.
-    if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
-        mkdir -p "$HOME/.local/bin"
-        ln -sfn "$(command -v batcat)" "$HOME/.local/bin/bat"
-    fi
-
-    # gh — GitHub's apt repo (not in Ubuntu default)
-    if ! command -v gh >/dev/null 2>&1; then
-        sudo mkdir -p -m 755 /etc/apt/keyrings
-        wget -nv -O- https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
-            sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
-        sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
-            sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-        sudo apt-get update -qq && sudo apt-get install -yq gh
-    fi
-
-    # eza — third-party apt repo
-    if ! command -v eza >/dev/null 2>&1; then
-        sudo mkdir -p /etc/apt/keyrings
-        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
-            sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
-            sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
-        sudo apt-get update -qq && sudo apt-get install -yq eza
-    fi
-
-    # zoxide — upstream installer
-    if ! command -v zoxide >/dev/null 2>&1; then
-        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
-    fi
-
-    # starship — upstream installer
-    if ! command -v starship >/dev/null 2>&1; then
-        curl -sS https://starship.rs/install.sh | sh -s -- -y
-    fi
-
-    # git-delta — github release .deb
-    if ! command -v delta >/dev/null 2>&1; then
-        DELTA_VER=$(curl -sSfL https://api.github.com/repos/dandavison/delta/releases/latest | jq -r .tag_name)
-        ARCH=$(dpkg --print-architecture)
-        curl -sSfL "https://github.com/dandavison/delta/releases/download/${DELTA_VER}/git-delta_${DELTA_VER}_${ARCH}.deb" -o /tmp/delta.deb
-        sudo dpkg -i /tmp/delta.deb && rm /tmp/delta.deb
-    fi
-
-    # neovim — github release tarball (apt version too old for our init.lua)
-    needs_nvim=1
-    if command -v nvim >/dev/null 2>&1; then
-        if nvim --version | head -1 | awk '{print $2}' | grep -qE 'v0\.(1[1-9]|[2-9][0-9])'; then
-            needs_nvim=0
-        fi
-    fi
-    if [ "$needs_nvim" = "1" ]; then
-        ARCH_TAR="$(uname -m)"
-        case "$ARCH_TAR" in
-            x86_64)  NVIM_ASSET=nvim-linux-x86_64.tar.gz ;;
-            aarch64) NVIM_ASSET=nvim-linux-arm64.tar.gz ;;
-            *) echo "neovim: unsupported arch $ARCH_TAR — skipping"; NVIM_ASSET= ;;
-        esac
-        if [ -n "$NVIM_ASSET" ]; then
-            curl -sSfL "https://github.com/neovim/neovim/releases/latest/download/$NVIM_ASSET" -o /tmp/nvim.tar.gz
-            sudo tar -xzf /tmp/nvim.tar.gz -C /opt/
-            sudo ln -sfn "/opt/${NVIM_ASSET%.tar.gz}/bin/nvim" /usr/local/bin/nvim
-            rm /tmp/nvim.tar.gz
-        fi
-    fi
+if ! command -v apt-get >/dev/null 2>&1; then
+    echo "install-packages: only Debian/Ubuntu apt is supported on Linux today" >&2
+    exit 0
 fi
+
+# ---------- Upstream installer functions ----------
+# Called by name (linux_kind) from the data file's `upstream` array.
+
+install_skip() { :; }
+
+install_gh() {
+    command -v gh >/dev/null 2>&1 && return
+    sudo mkdir -p -m 755 /etc/apt/keyrings
+    wget -nv -O- https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+        sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+    sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+        sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+    sudo apt-get update -qq && sudo apt-get install -yq gh
+}
+
+install_eza() {
+    command -v eza >/dev/null 2>&1 && return
+    sudo mkdir -p /etc/apt/keyrings
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
+        sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
+        sudo tee /etc/apt/sources.list.d/gierens.list >/dev/null
+    sudo apt-get update -qq && sudo apt-get install -yq eza
+}
+
+install_zoxide() {
+    command -v zoxide >/dev/null 2>&1 || \
+        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+}
+
+install_starship() {
+    command -v starship >/dev/null 2>&1 || \
+        curl -sS https://starship.rs/install.sh | sh -s -- -y
+}
+
+install_git_delta() {
+    command -v delta >/dev/null 2>&1 && return
+    local ver arch
+    ver=$(curl -sSfL https://api.github.com/repos/dandavison/delta/releases/latest | jq -r .tag_name)
+    arch=$(dpkg --print-architecture)
+    curl -sSfL "https://github.com/dandavison/delta/releases/download/${ver}/git-delta_${ver}_${arch}.deb" -o /tmp/delta.deb
+    sudo dpkg -i /tmp/delta.deb && rm /tmp/delta.deb
+}
+
+install_neovim() {
+    if command -v nvim >/dev/null 2>&1 \
+       && nvim --version | head -1 | awk '{print $2}' | grep -qE 'v0\.(1[1-9]|[2-9][0-9])'; then
+        return
+    fi
+    local asset
+    case "$(uname -m)" in
+        x86_64)  asset=nvim-linux-x86_64.tar.gz ;;
+        aarch64) asset=nvim-linux-arm64.tar.gz ;;
+        *) echo "neovim: unsupported arch $(uname -m) — skipping" >&2; return ;;
+    esac
+    curl -sSfL "https://github.com/neovim/neovim/releases/latest/download/$asset" -o /tmp/nvim.tar.gz
+    sudo tar -xzf /tmp/nvim.tar.gz -C /opt/
+    sudo ln -sfn "/opt/${asset%.tar.gz}/bin/nvim" /usr/local/bin/nvim
+    rm /tmp/nvim.tar.gz
+}
+
+# ---------- apt: standard packages from data ----------
+
+APT_PKGS=(
+{{- range .packages.common }}
+    {{ .apt }}
+{{- end }}
+{{- range .packages.apt_only }}
+    {{ . }}
+{{- end }}
+)
+
+sudo apt-get update -qq
+sudo apt-get install -yq --no-install-recommends "${APT_PKGS[@]}"
+
+# npm — NodeSource bundles it; apt's npm conflicts. Install only if missing.
+if ! command -v npm >/dev/null 2>&1; then
+    sudo apt-get install -yq --no-install-recommends npm
+fi
+
+# ---------- Symlinks for renamed binaries ----------
+{{ range .packages.common -}}
+{{- if hasKey . "symlink_from" }}
+if command -v {{ .symlink_from }} >/dev/null 2>&1 && ! command -v {{ .symlink_to }} >/dev/null 2>&1; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sfn "$(command -v {{ .symlink_from }})" "$HOME/.local/bin/{{ .symlink_to }}"
+fi
+{{ end -}}
+{{- end }}
+
+# ---------- Upstream installers (called in order from data) ----------
+{{ range .packages.upstream -}}
+install_{{ .linux_kind }}
+{{ end -}}
+
 {{ end -}}
