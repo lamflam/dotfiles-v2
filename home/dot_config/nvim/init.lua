@@ -432,3 +432,9 @@ require('lazy').setup({
   ui = { border = 'rounded' },
   change_detection = { notify = false },
 })
+
+-- Load local extensions (work-specific plugins, LSP configs, etc.) if present.
+local local_init = vim.fn.stdpath('config') .. '/lua/local/init.lua'
+if vim.fn.filereadable(local_init) == 1 then
+  dofile(local_init)
+end

@@ -1,11 +1,9 @@
 {{- /* Prompts on `chezmoi init` to populate machine-specific data. */ -}}
 {{- $name := promptStringOnce . "name" "Full name for git" "Kevin LaFlamme" -}}
 {{- $email := promptStringOnce . "email" "Git email" "kevinl@hey.com" -}}
-{{- $work := promptBoolOnce . "work" "Is this a work machine? (enables Stripe overlay)" false -}}
 {{- $nested := promptBoolOnce . "nested" "Is this a remote/nested machine? (tmux uses C-z prefix + M-hjkl nav)" false -}}
 
 [data]
     name = {{ $name | quote }}
     email = {{ $email | quote }}
-    work = {{ $work }}
     nested = {{ $nested }}

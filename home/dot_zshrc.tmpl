@@ -31,6 +31,9 @@ for f in path exports aliases functions fzf; do
   [ -r "$ZSH_CONFIG/$f.zsh" ] && source "$ZSH_CONFIG/$f.zsh"
 done
 
+# Local extensions (work-specific, machine-specific, etc.)
+[ -r "$ZSH_CONFIG/local.zsh" ] && source "$ZSH_CONFIG/local.zsh"
+
 # Plugins — only load in real interactive terminals (skips `zsh -ic` and scripts).
 if [[ -t 0 && $- == *i* ]]; then
 {{- if eq .chezmoi.os "darwin" }}
