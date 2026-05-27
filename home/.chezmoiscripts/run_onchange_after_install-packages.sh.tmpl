@@ -19,7 +19,7 @@ fi
 eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
 
 echo "Running brew bundle..."
-brew bundle install --file="$HOME/.config/Brewfile"
+brew bundle install --file="$HOME/.config/Brewfile" || echo "  (brew bundle had errors — non-fatal, continuing)"
 
 {{ else if eq .chezmoi.os "linux" -}}
 # ============================================================== Linux (apt + upstream)
