@@ -426,6 +426,8 @@ require('lazy').setup({
   -- LSP progress in corner
   { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {} },
 
+  -- Work-specific plugins (loaded from ~/.config/nvim/lua/local/plugins/)
+  { import = 'local.plugins' },
 }, {
   -- lazy.nvim global options
   install = { colorscheme = { 'gruvbox' } },
